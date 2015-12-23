@@ -1,0 +1,35 @@
+<html>
+  <head>
+    <title>FIX Retro</title>
+  </head>
+  <body>
+
+    <h1>Usage</h1>
+
+    <p>To use :-</p>
+<pre>
+java -Xmx256m -cp target/fixretro-&lt;VERSION&gt;.jar org.fixprotocol.contrib.retro.FixRetro \
+FixRepository-2010.xml FixRepository-2010_Retro.xml
+</pre>
+
+    <p>The resulting <code>FixRepository-2010_Retro.xml</code> can be used with
+    FIX Converter to allow the conversion between FIX.4.2 and this XML
+    representation of FIX.4.2.</p>
+
+    <p>The resulting <code>FixRepository-2010_Retro.xml</code> can also be used
+    to generate XML Schemas.
+    Copy it over the original <code>FixRepository.xml</code>
+    alongside the various <code>FIX_*_phrases.xml</code> files.
+    Use Lasalletech FIX Explorer 2.2.2 (or later) to
+    <b>File -&gt; Open</b> <code>FixRepository.xml</code>, and then
+    <b>File -&gt; Export... FIXML Schema</b>.
+    You can then validate these XML messages against the generated
+    <code>fixml-main-4-2.xsd</code> file, and the files referenced by it.</p>
+
+    <p>Although Lasalletech FIX Explorer is mentioned in this document,
+    other Unified FIX Repository editing tools and FIXML schema generation
+    tools should work too.
+    Its just that this is what I had handy at the time to test with.</p>
+
+  </body>
+</html>

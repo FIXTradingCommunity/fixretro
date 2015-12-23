@@ -1,0 +1,209 @@
+<html>
+  <head>
+    <title>FIX Retro</title>
+  </head>
+  <body>
+
+    <h1>Background</h1>
+
+    <p>Retrofitting all the modern FIXML goodness from FIX.4.4 to earlier
+    versions.</p>
+
+<!--...sTwo kinds of FIXML:4:-->
+<h2>Two kinds of FIXML</h2>
+
+<p>FIXML prior to FIX.4.4 used lots of elements.
+<a href="http://fixwiki.fixprotocol.org/fixwiki/FPL:FIXML_Syntax">
+   <code>http://fixwiki.fixprotocol.org/fixwiki/FPL:FIXML_Syntax</code></a>
+shows an FIXML 4.2 example like this :-</p>
+<pre>
+&lt;FIXML&gt;
+    &lt;FIXMLMessage&gt;
+        &lt;Header&gt;
+            &lt;PossDupFlag Value="N"/&gt;
+            &lt;PossResend Value="N"/&gt;
+            &lt;SendingTime&gt;20020103-12  00  01&lt;/SendingTime&gt;
+            &lt;Sender&gt;
+                &lt;CompID&gt;AFUNDMGR&lt;/CompID&gt;
+            &lt;/Sender&gt;
+            &lt;Target&gt;
+                &lt;CompID&gt;ABROKER&lt;/CompID&gt;
+            &lt;/Target&gt;
+        &lt;/Header&gt;
+        &lt;ApplicationMessage&gt;
+            &lt;Order&gt;
+                <i>... stuff</i>
+            &lt;/Order&gt;
+        &lt;/ApplicationMessage&gt;
+    &lt;/FIXMLMessage&gt;
+&lt;/FIXML&gt;
+</pre>
+
+<p>It is thought that the old kind isn't often spoken between organisations.</p>
+
+<p>FIXML from FIX.4.4 onwards uses fewer elements, and FIX fields
+are typically attributes.
+An example :-</p>
+<pre>
+&lt;FIXML xmlns="http://www.fixprotocol.org/FIXML-4-4" v="4.4"&gt;
+    &lt;Order ID="123456" Side="2" TxnTm="2001-09-11T09:30:47-05:00"
+           Typ="2" Px="93.25" Acct="26522154"&gt;
+        &lt;Hdr Snt="2001-09-11T09:30:47-05:00" PosDup="N" PosRsnd="N"
+             SeqNum="521" SID="AFUNDMGR" TID="ABROKER"/&gt;
+        &lt;Instrmt Sym="IBM" ID="459200101" Src="1"/&gt;
+        &lt;OrdQty Qty="1000"/&gt;
+    &lt;/Order&gt;
+&lt;/FIXML&gt;
+</pre>
+
+<p>Various corruptions of the FIXML standards may be observed in the wild,
+including lack of namespaces and incorrect element names.
+Part of the problem may be in the lack of use of schemas to validate messages,
+either at design, development, testing or execution time.</p>
+
+<p><b>Hypocritically, FIX Retro introduces another corruption of the FIXML
+standards</b>, although this time (the author would argue), in a good cause.
+ie: trying to bring the legacy of the past upto date with the present.</p>
+<!--...e-->
+<!--...sUnified FIX Repository:4:-->
+<h2>Unified FIX Repository</h2>
+
+<p>The 2010 Edition of the Unified FIX Repository includes FIX.4.0
+to FIX.5.0SP2.</p>
+
+<p>Versions prior to FIX.4.4 have an <code>fixml="0"</code> attribute,
+and include no metadata facilitating the generation of the FIXML schemas.</p>
+
+<p>Version from FIX.4.4 onwards have an <code>fixml="1"</code> attribute,
+and a whole load of extra metadata (such as <code>abbrName</code>,
+<code>categories</code>, <code>category</code>,
+<code>baseCategoryAbbrName</code> etc..) which support the generation
+of FIXML schema.</p>
+
+<p>This probably reflects the fact that common FIX tooling only generates
+the FIX.4.4 onwards style of schema from the Unified FIX Repository.</p>
+<!--...e-->
+<!--...sWhat FIX Retro does:4:-->
+<h2>What FIX Retro does</h2>
+
+<p>FIX Retro reads the Unified FIX Repository.
+It locates the (non-customised) entry for FIX.4.4.
+It then looks for every old entry for a version of FIX with
+<code>fixml="0"</code>.
+It augments each of these with information from FIX.4.4,
+and marks the entry with <code>fixml="1"</code>.
+It also appends <code>#RETRO</code> to the <code>specUrl</code>
+attribute, so as to make it additionally clear something strange
+has happened.</p>
+
+<p>FIX Retro copies the <code>abbreviations</code>,
+<code>categories</code> and <code>sections</code> elements from FIX.4.4.</p>
+
+<p>It ensures that if the old version of FIX doesn't have a datatype that
+is present in FIX.4.4, then its copied from FIX.4.4.
+This is important as it ensures the old version of FIX gets a
+<code>NumInGroup</code> datatype.</p>
+
+<p>If the old version of FIX has a field or component which is not present
+in FIX.4.4, then the <code>abbrName</code> used will match the
+unabbreviated <code>name</code>.
+eg: FIX.4.2 has tag 20 (aka <code>ExecTransType</code>) and FIX.4.4 does not.</p>
+
+<p>If the old version of FIX has a field whose name is different to that in
+FIX.4.4, then a warning is displayed.
+The <code>abbrName</code> used will still be taken from FIX.4.4.
+eg: FIX.4.2 tag 22 is called <code>IDSource</code>, but in FIX.4.4 its known
+as <code>SecurityIDSource</code>.</p>
+
+<p>If the old version of FIX has a field whose name starts with
+<code>No</code>, of type <code>int</code>, then this is corrected to be of
+type <code>NumInGroup</code>.</p>
+
+<p>FIX Retro ensures the old version of FIX has a <code>Hop</code> component
+referencing <code>NoHops</code>, <code>HopCompID</code>,
+<code>HopSendingTime</code> and <code>HopRefID</code> fields, by copying
+these from the FIX.4.4 definitions.
+Lasalletech FIX Explorer 2.2.2 will not export valid FIXML XSDs without this
+being present in the version of FIX, even though no message or component uses
+the <code>Hop</code> component.
+This is completely understandable - all official FIXML versions have
+a <code>Hop</code> component.</p>
+
+<p>If the old version of FIX has components or messages not present in FIX.4.4
+then a warning is displayed.
+This doesn't happen, but if it did, it would mean that the resulting
+output file isn't complete, and would be unlikely to be usable.</p>
+
+<p>FIX Retro also looks at components and messages to see if any of them
+directly include repeating groups.
+It creates a component containing the repeating group and replaces the
+repeating group in the message with a component reference.
+It does this because the modern FIXML relies on the fact repeating groups
+are children of components (all the fields in the group are attributes
+and have to have an element, defined by the component, to be attached to).</p>
+
+<p>The XML element name for the repeatingGroup in the FIX.4.2 and FIX.4.3
+Logon message cannot be determined from anywhere, so FIX Retro hard-codes
+the name <code>RefMsg</code>.</p>
+
+<p>It looks through messages and repeating groups for sequences of fields
+which should actually be in components, which are then referenced.
+It uses FIX.4.4 as a guide as to what components should be used and what
+fields they should reference.
+This is necessary to ensure the resulting FIXML has a nicely nested
+structure of XML elements.
+If this is not done, you can end up with more than one field in a message
+or component wanting to use the same XML attribute name, which obviously
+can't be allowed.</p>
+
+<p>Note that in FIX.4.3 the <code>LegCurrency</code> field sits alongside
+but not in the <code>InstrumentLeg</code> component.
+FIX Retro does not move it into the component, despite the fact that
+it is in the component in FIX.4.4.</p>
+<!--...e-->
+<!--...sWhy it does it:4:-->
+<h2>Why it does it</h2>
+
+<p>After using FIX Retro, it should be possible to load the resulting
+Unified FIX Repository file into a tool such as Lasalle FIX Explorer
+and then generate schema for these earlier versions of FIX.</p>
+
+<p>In particular, I care about FIX.4.2, as it seems to be still in
+widespread use.</p>
+
+<p>This wouldn't result in the official FIXML schemas for FIX.4.2.
+<b>It would result in schemas for FIX.4.2, created in the same style
+as the FIX.4.4 ones</b>.
+Or put another way: FIXML 4.2 the way perhaps the FIXML designers
+had wished they had done it originally.</p>
+
+<p>Despite not being the official FIXML 4.2, this alternative XML
+representation of FIX.4.2 is complete, and is potentially useful.</p>
+
+<p>An example of what this looks like :-</p>
+<pre>
+&lt;?xml version="1.0" encoding="UTF-8" standalone="no"?&gt;
+&lt;!-- This is not FIXML 4.2, it is an XML representation of FIX.4.2, in the modern FIXML 4.4 onwards style --&gt;
+&lt;FIXML v="4.2" xmlns="http://www.fixprotocol.org/FIXML-4-2"&gt;
+    &lt;Order Acct="26522154" HandlInst="1" ID="123456" Px="93.25" Side="2" TxnTm="2001-09-11T14:30:47" Typ="2"&gt;
+        &lt;Hdr PosDup="N" PosRsnd="N" SID="AFUNDMGR" SeqNum="521" Snt="2001-09-11T14:30:47" TID="ABROKER"/&gt;
+        &lt;Instrmt ID="459200101" Src="1" Sym="IBM"/&gt;
+        &lt;OrdQty Qty="1000"/&gt;
+    &lt;/Order&gt;
+&lt;/FIXML&gt;
+</pre>
+
+<p>The FIX Converter runs off of the Unified FIX Repository and understands
+the FIX.4.4 onwards kind of FIXML.
+It will therefore be able to convert between FIX.4.2 tag=value and
+this alternative XML representation of FIX.4.2.</p>
+
+<p>This enables a single XML based messaging system to cope with
+FIX.4.2 in the same way as it would FIX.4.4 onwards.
+Many XPath expressions will be virtually the same for all versions of
+FIX (apart from the namespaces), and similarly for any XSLT or XQuery
+based validation logic.</p>
+<!--...e-->
+
+  </body>
+</html>
